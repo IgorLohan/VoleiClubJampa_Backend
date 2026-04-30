@@ -120,7 +120,7 @@ async function enviarEmailInscricaoAprovada({
 
   const urlFrontend = obterUrlFrontendSemBarraFinal();
   const linkCampeonato = campeonatoId
-    ? `${urlFrontend}/campeonato/${campeonatoId}`
+    ? `${urlFrontend}/dashboard/campeonatos`
     : urlFrontend;
 
   const resposta = await resend.emails.send({
@@ -167,7 +167,7 @@ async function enviarEmailInscricaoAprovada({
           <a
             href="${linkCampeonato}"
             style="
-              background: #2563eb;
+              background: #e44631;
               color: #ffffff;
               padding: 12px 18px;
               border-radius: 8px;
@@ -204,7 +204,7 @@ async function enviarEmailInscricaoReprovada({
 
   const urlFrontend = obterUrlFrontendSemBarraFinal();
   const linkCampeonato = campeonatoId
-    ? `${urlFrontend}/campeonato/${campeonatoId}`
+    ? `${urlFrontend}/dashboard/campeonatos`
     : urlFrontend;
 
   const resposta = await resend.emails.send({
