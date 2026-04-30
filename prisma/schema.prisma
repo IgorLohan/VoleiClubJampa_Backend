@@ -1,0 +1,271 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum TipoParticipante {
+  DUPLA
+  TIME
+}
+
+enum CategoriaCampeonato {
+  MASCULINO
+  FEMININO
+  MISTA
+}
+
+enum StatusInscricao {
+  PENDENTE
+  APROVADA
+  RECUSADA
+}
+
+enum StatusJogo {
+  PENDENTE
+  FINALIZADO
+}
+
+enum FormatoCampeonato {
+  MATA_MATA
+  DUPLA_ELIMINACAO
+  TODOS_CONTRA_TODOS
+  GRUPOS_3X4_REPESCAGEM
+}
+
+enum PapelUsuario {
+  ADMIN
+  PARTICIPANTE
+}
+
+enum SexoUsuario {
+  MASCULINO
+  FEMININO
+  OUTRO
+  PREFIRO_NAO_INFORMAR
+}
+
+enum PapelMembroEquipe {
+  DONO
+  MEMBRO
+}
+
+enum StatusConviteEquipe {
+  PENDENTE
+  ACEITO
+  EXPIRADO
+  CANCELADO
+}
+
+enum ModoInscricaoCampeonato {
+  POR_EQUIPE
+  INDIVIDUAL
+}
+
+enum StatusInscricaoIndividual {
+  PENDENTE
+  USADA_EM_EQUIPE
+  CANCELADA
+}
+
+enum StatusAnaliseInscricaoIndividual {
+  AGUARDANDO_ANALISE
+  APROVADA
+  REPROVADA
+}
+
+enum TamanhoCamisa {
+  P
+  M
+  G
+  GG
+}
+
+model Usuario {
+  id             Int          @id @default(autoincrement())
+  nome           String
+  email          String       @unique
+  loginAdmin     String?      @unique
+  contato        String?
+  dataNascimento DateTime?
+  sexo           SexoUsuario?
+  fotoPerfil     String?
+  senhaHash      String
+  papel          PapelUsuario
+  criadoEm       DateTime     @default(now())
+
+  emailVerificado          Boolean   @default(false)
+  tokenVerificacaoEmail    String?   @unique
+  tokenVerificacaoExpiraEm DateTime?
+
+  inscricoes            Participante[]
+  inscricoesIndividuais InscricaoIndividual[]
+
+  equipesCriadas  Equipe[]        @relation("DonoEquipe")
+  equipesMembro   EquipeMembro[]
+  convitesCriados ConviteEquipe[] @relation("ConvitesCriados")
+}
+
+model Equipe {
+  id               Int              @id @default(autoincrement())
+  nome             String
+  tipoParticipante TipoParticipante
+  criadaEm         DateTime         @default(now())
+
+  donoId Int
+  dono   Usuario @relation("DonoEquipe", fields: [donoId], references: [id], onDelete: Cascade)
+
+  membros    EquipeMembro[]
+  convites   ConviteEquipe[]
+  inscricoes Participante[]
+
+  @@unique([donoId, nome])
+}
+
+model EquipeMembro {
+  id       Int               @id @default(autoincrement())
+  papel    PapelMembroEquipe @default(MEMBRO)
+  criadoEm DateTime          @default(now())
+
+  equipeId Int
+  equipe   Equipe @relation(fields: [equipeId], references: [id], onDelete: Cascade)
+
+  usuarioId Int
+  usuario   Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@unique([equipeId, usuarioId])
+}
+
+model ConviteEquipe {
+  id       Int                 @id @default(autoincrement())
+  token    String              @unique
+  status   StatusConviteEquipe @default(PENDENTE)
+  criadoEm DateTime            @default(now())
+  expiraEm DateTime?
+
+  equipeId Int
+  equipe   Equipe @relation(fields: [equipeId], references: [id], onDelete: Cascade)
+
+  criadoPorId Int
+  criadoPor   Usuario @relation("ConvitesCriados", fields: [criadoPorId], references: [id], onDelete: Cascade)
+}
+
+model Campeonato {
+  id                Int                     @id @default(autoincrement())
+  nome              String
+  data              DateTime?
+  local             String?
+  tipoParticipante  TipoParticipante
+  categoria         CategoriaCampeonato
+  formato           FormatoCampeonato       @default(MATA_MATA)
+  modoInscricao     ModoInscricaoCampeonato @default(POR_EQUIPE)
+  quantidadeMaxima  Int?
+  inscricoesAbertas Boolean                 @default(true)
+  criadoEm          DateTime                @default(now())
+
+  participantes         Participante[]
+  inscricoesIndividuais InscricaoIndividual[]
+  jogos                 Jogo[]
+}
+
+model Participante {
+  id              Int             @id @default(autoincrement())
+  nomeEquipe      String
+  responsavel     String
+  contato         String?
+  statusInscricao StatusInscricao @default(PENDENTE)
+  criadoEm        DateTime        @default(now())
+
+  campeonatoId Int
+  campeonato   Campeonato @relation(fields: [campeonatoId], references: [id], onDelete: Cascade)
+
+  usuarioId Int?
+  usuario   Usuario? @relation(fields: [usuarioId], references: [id], onDelete: SetNull)
+
+  equipeId Int?
+  equipe   Equipe? @relation(fields: [equipeId], references: [id], onDelete: SetNull)
+
+  jogadores Jogador[]
+
+  inscricoesIndividuais InscricaoIndividual[]
+
+  jogosComoA    Jogo[] @relation("JogoEquipeA")
+  jogosComoB    Jogo[] @relation("JogoEquipeB")
+  jogosVencidos Jogo[] @relation("JogoVencedor")
+
+  @@unique([campeonatoId, nomeEquipe])
+}
+
+model InscricaoIndividual {
+  id       Int                       @id @default(autoincrement())
+  status   StatusInscricaoIndividual @default(PENDENTE)
+  criadoEm DateTime                  @default(now())
+
+  statusAnalise StatusAnaliseInscricaoIndividual @default(AGUARDANDO_ANALISE)
+
+  valorTotalCentavos   Int            @default(2000)
+  tamanhoCamisa        TamanhoCamisa?
+  comprovantePagamento String?
+
+  observacaoAdmin String?
+  analisadoEm     DateTime?
+
+  campeonatoId Int
+  campeonato   Campeonato @relation(fields: [campeonatoId], references: [id], onDelete: Cascade)
+
+  usuarioId Int
+  usuario   Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  participanteId Int?
+  participante   Participante? @relation(fields: [participanteId], references: [id], onDelete: SetNull)
+
+  @@unique([campeonatoId, usuarioId])
+  @@index([campeonatoId, statusAnalise])
+  @@index([campeonatoId, status])
+}
+
+model Jogador {
+  id     Int    @id @default(autoincrement())
+  nome   String
+  genero String
+
+  participanteId Int
+  participante   Participante @relation(fields: [participanteId], references: [id], onDelete: Cascade)
+}
+
+model Jogo {
+  id       Int        @id @default(autoincrement())
+  fase     String
+  grupo    String?
+  rodada   Int?
+  ordem    Int?
+  status   StatusJogo @default(PENDENTE)
+  criadoEm DateTime   @default(now())
+
+  campeonatoId Int
+  campeonato   Campeonato @relation(fields: [campeonatoId], references: [id], onDelete: Cascade)
+
+  equipeAId Int?
+  equipeA   Participante? @relation("JogoEquipeA", fields: [equipeAId], references: [id])
+
+  equipeBId Int?
+  equipeB   Participante? @relation("JogoEquipeB", fields: [equipeBId], references: [id])
+
+  vencedorId Int?
+  vencedor   Participante? @relation("JogoVencedor", fields: [vencedorId], references: [id])
+
+  sets SetJogo[]
+}
+
+model SetJogo {
+  id        Int @id @default(autoincrement())
+  numeroSet Int
+  pontosA   Int
+  pontosB   Int
+
+  jogoId Int
+  jogo   Jogo @relation(fields: [jogoId], references: [id], onDelete: Cascade)
+}
