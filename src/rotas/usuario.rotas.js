@@ -26,6 +26,22 @@ router.patch(
   usuarioControlador.atualizarFotoPerfil
 );
 
+// Aliases para manter compatibilidade com o frontend novo (rotas "/me")
+router.get("/me", autenticarParticipante, usuarioControlador.perfil);
+
+router.patch(
+  "/me",
+  autenticarParticipante,
+  usuarioControlador.atualizarPerfil
+);
+
+router.patch(
+  "/me/foto",
+  autenticarParticipante,
+  uploadFotoPerfil.single("foto"),
+  usuarioControlador.atualizarFotoPerfil
+);
+
 router.get(
   "/minhas-inscricoes",
   autenticarParticipante,

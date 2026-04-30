@@ -2,7 +2,9 @@ import usuarioServico from "../servicos/usuario.servico.js";
 
 const SEXOS_VALIDOS = [
   "MASCULINO",
-  "FEMININO"
+  "FEMININO",
+  "OUTRO",
+  "PREFIRO_NAO_INFORMAR"
 ];
 
 function validarSexo(sexo) {
@@ -160,25 +162,19 @@ async function atualizarFotoPerfil(req, res) {
 
 async function atualizarPerfil(req, res) {
   try {
-    const { nome, contato, dataNascimento, sexo } = req.body;
+    const { nome, contato, dataNascimento, sexo } = req.body || {};
 
-    if (!nome || !contato || !dataNascimento || !sexo) {
+    if (sexo && !validarSexo(sexo)) {
       return res.status(400).json({
-        erro: "Nome, contato, data de nascimento e sexo são obrigatórios."
-      });
-    }
-
-    if (!validarSexo(sexo)) {
-      return res.status(400).json({
-        erro: "Sexo inválido. Use MASCULINO ou FEMININO."
+        erro: "Sexo inválido. Use MASCULINO, FEMININO, OUTRO ou PREFIRO_NAO_INFORMAR."
       });
     }
 
     const usuario = await usuarioServico.atualizarPerfil(req.usuario.id, {
-      nome,
-      contato,
-      dataNascimento,
-      sexo
+      nome: nome !== undefined ? nome : undefined,
+      contato: contato !== undefined ? contato : undefined,
+      dataNascimento: dataNascimento !== undefined ? dataNascimento : undefined,
+      sexo: sexo !== undefined ? sexo : undefined
     });
 
     return res.json(usuario);

@@ -315,7 +315,7 @@ async function atualizarFotoPerfil(usuarioId, nomeArquivo) {
   return usuarioAtualizado;
 }
 
-async function atualizarPerfil(usuarioId, { nome, contato, dataNascimento, sexo }) {
+async function atualizarPerfil(usuarioId, { nome, contato, dataNascimento, sexo } = {}) {
   const usuario = await prisma.usuario.findUnique({
     where: {
       id: Number(usuarioId)
@@ -326,16 +326,26 @@ async function atualizarPerfil(usuarioId, { nome, contato, dataNascimento, sexo 
     throw new Error("Usuário não encontrado.");
   }
 
+  const data = {};
+  if (nome !== undefined) data.nome = nome;
+  if (contato !== undefined) data.contato = contato;
+  if (dataNascimento !== undefined) {
+    data.dataNascimento = prepararDataNascimento(dataNascimento);
+  }
+  if (sexo !== undefined) data.sexo = sexo || null;
+
+  if (!Object.keys(data).length) {
+    return await prisma.usuario.findUnique({
+      where: { id: Number(usuarioId) },
+      select: selectUsuarioPublico
+    });
+  }
+
   const usuarioAtualizado = await prisma.usuario.update({
     where: {
       id: Number(usuarioId)
     },
-    data: {
-      nome,
-      contato,
-      dataNascimento: prepararDataNascimento(dataNascimento),
-      sexo: sexo || null
-    },
+    data,
     select: selectUsuarioPublico
   });
 
