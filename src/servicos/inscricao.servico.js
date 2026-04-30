@@ -33,6 +33,27 @@ function validarCampeonatoPermiteInscricaoPorEquipe(campeonato) {
   }
 }
 
+async function garantirUsuarioSemInscricaoIndividualNoCampeonato(campeonatoId, usuarioId) {
+  if (!usuarioId) {
+    return;
+  }
+
+  const inscricaoIndividual = await prisma.inscricaoIndividual.findUnique({
+    where: {
+      campeonatoId_usuarioId: {
+        campeonatoId: Number(campeonatoId),
+        usuarioId: Number(usuarioId)
+      }
+    }
+  });
+
+  if (inscricaoIndividual) {
+    throw new Error(
+      "Você já possui inscrição neste campeonato (modalidade individual) e não pode inscrever uma equipe."
+    );
+  }
+}
+
 function montarJogadoresAPartirDaEquipe(equipe) {
   return equipe.membros.map((membro) => {
     const genero = converterSexoParaGenero(membro.usuario?.sexo);
@@ -154,6 +175,21 @@ async function inscreverComEquipe(campeonatoId, equipeId, usuarioId) {
 
   if (!campeonato.inscricoesAbertas) {
     throw new Error("As inscrições deste campeonato estão encerradas.");
+  }
+
+  if (usuarioId) {
+    const jaInscritoComoEquipe = await prisma.participante.findFirst({
+      where: {
+        campeonatoId: Number(campeonatoId),
+        usuarioId: Number(usuarioId)
+      }
+    });
+
+    if (jaInscritoComoEquipe) {
+      throw new Error("Você já realizou uma inscrição neste campeonato.");
+    }
+
+    await garantirUsuarioSemInscricaoIndividualNoCampeonato(campeonatoId, usuarioId);
   }
 
   if (campeonato.quantidadeMaxima !== null) {
@@ -281,6 +317,8 @@ async function inscreverManual(campeonatoId, dados, usuarioId = null) {
     if (inscricaoDoMesmoUsuario) {
       throw new Error("Você já realizou uma inscrição neste campeonato.");
     }
+
+    await garantirUsuarioSemInscricaoIndividualNoCampeonato(campeonatoId, usuarioId);
   }
 
   if (campeonato.quantidadeMaxima !== null) {

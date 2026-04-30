@@ -200,8 +200,23 @@ async function criar(campeonatoId, usuarioId, dados = {}) {
     }
   });
 
-  if (inscricaoExistente && inscricaoExistente.status !== "CANCELADA") {
-    throw new Error("Você já enviou uma inscrição individual para este campeonato.");
+  if (inscricaoExistente) {
+    throw new Error(
+      "Você já possui inscrição neste campeonato e não pode se inscrever novamente."
+    );
+  }
+
+  const inscricaoPorEquipe = await prisma.participante.findFirst({
+    where: {
+      campeonatoId: Number(campeonatoId),
+      usuarioId: Number(usuarioId)
+    }
+  });
+
+  if (inscricaoPorEquipe) {
+    throw new Error(
+      "Você já está inscrito neste campeonato por equipe e não pode se inscrever na modalidade individual."
+    );
   }
 
   if (campeonato.quantidadeMaxima !== null) {
@@ -212,38 +227,6 @@ async function criar(campeonatoId, usuarioId, dados = {}) {
     if (totalInscricoesAtivas >= campeonato.quantidadeMaxima) {
       throw new Error("O limite máximo de jogadores individuais já foi atingido.");
     }
-  }
-
-  if (inscricaoExistente && inscricaoExistente.status === "CANCELADA") {
-    return await prisma.inscricaoIndividual.update({
-      where: {
-        id: inscricaoExistente.id
-      },
-      data: {
-        status: "PENDENTE",
-        statusAnalise: "AGUARDANDO_ANALISE",
-        valorTotalCentavos: VALOR_TOTAL_INSCRICAO_CENTAVOS,
-        tamanhoCamisa,
-        comprovantePagamento,
-        participanteId: null,
-        observacaoAdmin: null,
-        analisadoEm: null
-      },
-      include: {
-        usuario: {
-          select: {
-            id: true,
-            nome: true,
-            email: true,
-            contato: true,
-            sexo: true,
-            fotoPerfil: true
-          }
-        },
-        campeonato: true,
-        participante: true
-      }
-    });
   }
 
   const inscricao = await prisma.inscricaoIndividual.create({
