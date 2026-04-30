@@ -1,4 +1,5 @@
 import { prisma } from "../banco/prisma.js";
+import emailServico from "./email.servico.js";
 
 const TAMANHOS_CAMISA_VALIDOS = ["P", "M", "G", "GG"];
 
@@ -110,6 +111,41 @@ async function contarInscricoesIndividuaisAtivas(campeonatoId) {
       }
     }
   });
+}
+
+async function tentarEnviarEmailInscricaoAprovada(inscricaoAtualizada) {
+  try {
+    await emailServico.enviarEmailInscricaoAprovada({
+      nome: inscricaoAtualizada.usuario?.nome,
+      email: inscricaoAtualizada.usuario?.email,
+      nomeCampeonato: inscricaoAtualizada.campeonato?.nome,
+      tamanhoCamisa: inscricaoAtualizada.tamanhoCamisa,
+      valorTotalCentavos: inscricaoAtualizada.valorTotalCentavos,
+      campeonatoId: inscricaoAtualizada.campeonatoId
+    });
+  } catch (error) {
+    console.error(
+      "Inscrição aprovada, mas houve erro ao enviar e-mail de aprovação:",
+      error
+    );
+  }
+}
+
+async function tentarEnviarEmailInscricaoReprovada(inscricaoAtualizada) {
+  try {
+    await emailServico.enviarEmailInscricaoReprovada({
+      nome: inscricaoAtualizada.usuario?.nome,
+      email: inscricaoAtualizada.usuario?.email,
+      nomeCampeonato: inscricaoAtualizada.campeonato?.nome,
+      observacaoAdmin: inscricaoAtualizada.observacaoAdmin,
+      campeonatoId: inscricaoAtualizada.campeonatoId
+    });
+  } catch (error) {
+    console.error(
+      "Inscrição reprovada, mas houve erro ao enviar e-mail de reprovação:",
+      error
+    );
+  }
 }
 
 async function criar(campeonatoId, usuarioId, dados = {}) {
@@ -331,10 +367,16 @@ async function aprovarInscricao(inscricaoId) {
     }
   });
 
+  await tentarEnviarEmailInscricaoAprovada(inscricaoAtualizada);
+
   return inscricaoAtualizada;
 }
 
-async function reprovarInscricao(inscricaoId, observacaoAdmin = null) {
+async function reprovarInscricao(
+  inscricaoId,
+  observacaoAdmin = null,
+  enviarEmail = true
+) {
   const inscricao = await prisma.inscricaoIndividual.findUnique({
     where: {
       id: Number(inscricaoId)
@@ -375,6 +417,10 @@ async function reprovarInscricao(inscricaoId, observacaoAdmin = null) {
       participante: true
     }
   });
+
+  if (enviarEmail) {
+    await tentarEnviarEmailInscricaoReprovada(inscricaoAtualizada);
+  }
 
   return inscricaoAtualizada;
 }
@@ -449,7 +495,11 @@ async function atualizarInscricao(inscricaoId, dados = {}) {
 }
 
 async function excluirInscricao(inscricaoId) {
-  return await reprovarInscricao(inscricaoId, "Excluída pelo administrador.");
+  return await reprovarInscricao(
+    inscricaoId,
+    "Excluída pelo administrador.",
+    false
+  );
 }
 
 async function montarEquipeComInscricoesIndividuais(campeonatoId, dados) {
