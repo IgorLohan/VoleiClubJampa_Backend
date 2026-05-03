@@ -31,6 +31,42 @@ async function inscrever(req, res) {
   }
 }
 
+async function inscreverAdmin(req, res) {
+  try {
+    const { id } = req.params;
+    const { nomeEquipe, responsavel, contato, jogadores } = req.body;
+
+    if (
+      !nomeEquipe ||
+      !responsavel ||
+      !jogadores ||
+      !Array.isArray(jogadores) ||
+      !jogadores.length
+    ) {
+      return res.status(400).json({
+        erro: "nomeEquipe, responsavel e jogadores são obrigatórios."
+      });
+    }
+
+    const participante = await inscricaoServico.inscrever(
+      id,
+      {
+        nomeEquipe,
+        responsavel,
+        contato,
+        jogadores
+      },
+      null
+    );
+
+    return res.status(201).json(participante);
+  } catch (error) {
+    return res.status(400).json({
+      erro: error.message
+    });
+  }
+}
+
 async function atualizar(req, res) {
   try {
     const { id } = req.params;
@@ -87,6 +123,7 @@ async function excluir(req, res) {
 
 export default {
   inscrever,
+  inscreverAdmin,
   listarPorCampeonato,
   atualizar,
   excluir

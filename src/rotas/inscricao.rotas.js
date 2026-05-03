@@ -7,6 +7,12 @@ import { autenticarAdmin } from "../middlewares/autenticacaoAdmin.middleware.js"
 const router = Router();
 
 router.post(
+  "/:id/inscricoes/admin",
+  autenticarAdmin,
+  inscricaoControlador.inscreverAdmin
+);
+
+router.post(
   "/:id/inscricoes",
   autenticarParticipante,
   inscricaoControlador.inscrever
