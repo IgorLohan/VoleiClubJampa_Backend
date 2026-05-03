@@ -478,11 +478,29 @@ async function atualizarInscricao(inscricaoId, dados = {}) {
 }
 
 async function excluirInscricao(inscricaoId) {
-  return await reprovarInscricao(
-    inscricaoId,
-    "Excluída pelo administrador.",
-    false
-  );
+  const inscricao = await prisma.inscricaoIndividual.findUnique({
+    where: {
+      id: Number(inscricaoId)
+    }
+  });
+
+  if (!inscricao) {
+    throw new Error("Inscrição individual não encontrada.");
+  }
+
+  if (inscricao.status === "USADA_EM_EQUIPE") {
+    throw new Error(
+      "Não é possível excluir uma inscrição que já foi usada em equipe."
+    );
+  }
+
+  await prisma.inscricaoIndividual.delete({
+    where: {
+      id: Number(inscricaoId)
+    }
+  });
+
+  return { mensagem: "Inscrição excluída com sucesso." };
 }
 
 async function montarEquipeComInscricoesIndividuais(campeonatoId, dados) {
