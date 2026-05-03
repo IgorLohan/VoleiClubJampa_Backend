@@ -208,7 +208,7 @@ async function enviarEmailInscricaoReprovada({
         <p>
           Sua inscrição no campeonato
           <strong>${escaparHtml(nomeCampeonato || "Vôlei Club Jampa")}</strong>
-          foi analisada, mas não foi aprovada pela organização.
+          foi analisada, mas não foi aprovada pela organização. Não se preocupe, em breve entraremos em contato para enviar o reembolso do valor da inscrição.
         </p>
 
         <div style="

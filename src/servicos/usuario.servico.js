@@ -32,6 +32,24 @@ const selectUsuarioPublico = {
   emailVerificado: true
 };
 
+const selectUsuarioAdmin = {
+  id: true,
+  nome: true,
+  email: true,
+  loginAdmin: true,
+  contato: true,
+  dataNascimento: true,
+  sexo: true,
+  fotoPerfil: true,
+  papel: true,
+  criadoEm: true,
+  emailVerificado: true
+};
+
+function normalizarLoginAdmin(login) {
+  return String(login || "").trim().toLowerCase();
+}
+
 function normalizarEmail(email) {
   return String(email || "").trim().toLowerCase();
 }
@@ -352,6 +370,188 @@ async function atualizarPerfil(usuarioId, { nome, contato, dataNascimento, sexo 
   return usuarioAtualizado;
 }
 
+async function listarTodosParaAdmin() {
+  return await prisma.usuario.findMany({
+    orderBy: {
+      criadoEm: "desc"
+    },
+    select: selectUsuarioAdmin
+  });
+}
+
+async function atualizarPorAdmin(usuarioAlvoId, dados = {}) {
+  const {
+    nome,
+    email,
+    loginAdmin,
+    contato,
+    dataNascimento,
+    sexo,
+    papel,
+    emailVerificado,
+    novaSenha
+  } = dados;
+
+  const alvo = await prisma.usuario.findUnique({
+    where: {
+      id: Number(usuarioAlvoId)
+    }
+  });
+
+  if (!alvo) {
+    throw new Error("Usuário não encontrado.");
+  }
+
+  const papelFinal =
+    papel !== undefined && papel !== null ? papel : alvo.papel;
+
+  if (!["ADMIN", "PARTICIPANTE"].includes(papelFinal)) {
+    throw new Error("Papel inválido.");
+  }
+
+  if (alvo.papel === "ADMIN" && papelFinal === "PARTICIPANTE") {
+    const outrosAdmins = await prisma.usuario.count({
+      where: {
+        papel: "ADMIN",
+        id: {
+          not: alvo.id
+        }
+      }
+    });
+
+    if (outrosAdmins === 0) {
+      throw new Error("Não é possível remover o único administrador do sistema.");
+    }
+  }
+
+  const sexosPermitidos = [
+    "MASCULINO",
+    "FEMININO",
+    "OUTRO",
+    "PREFIRO_NAO_INFORMAR"
+  ];
+
+  const data = {};
+
+  if (nome !== undefined) {
+    data.nome = String(nome || "").trim();
+    if (!data.nome) {
+      throw new Error("Nome é obrigatório.");
+    }
+  }
+
+  if (email !== undefined) {
+    const emailNormalizado = normalizarEmail(email);
+    if (!emailNormalizado) {
+      throw new Error("E-mail inválido.");
+    }
+
+    const existe = await prisma.usuario.findFirst({
+      where: {
+        email: emailNormalizado,
+        NOT: {
+          id: alvo.id
+        }
+      }
+    });
+
+    if (existe) {
+      throw new Error("Já existe um usuário com este e-mail.");
+    }
+
+    data.email = emailNormalizado;
+  }
+
+  if (contato !== undefined) {
+    data.contato = contato === null || contato === "" ? null : String(contato).trim();
+  }
+
+  if (dataNascimento !== undefined) {
+    data.dataNascimento = prepararDataNascimento(dataNascimento);
+  }
+
+  if (sexo !== undefined) {
+    if (sexo === null || sexo === "") {
+      data.sexo = null;
+    } else if (!sexosPermitidos.includes(sexo)) {
+      throw new Error("Sexo inválido.");
+    } else {
+      data.sexo = sexo;
+    }
+  }
+
+  if (papel !== undefined && papel !== null) {
+    data.papel = papelFinal;
+  }
+
+  if (emailVerificado !== undefined) {
+    data.emailVerificado = Boolean(emailVerificado);
+  }
+
+  let loginTratado =
+    loginAdmin === undefined
+      ? alvo.loginAdmin
+      : loginAdmin === null || loginAdmin === ""
+        ? null
+        : normalizarLoginAdmin(loginAdmin);
+
+  if (papelFinal === "PARTICIPANTE") {
+    loginTratado = null;
+  }
+
+  if (loginAdmin !== undefined || papel !== undefined) {
+    data.loginAdmin = loginTratado;
+  }
+
+  if (papelFinal === "ADMIN" && !loginTratado) {
+    throw new Error(
+      "Contas com papel Administrador precisam de um login de administrador definido."
+    );
+  }
+
+  if (loginAdmin !== undefined && loginTratado) {
+    const existeLogin = await prisma.usuario.findFirst({
+      where: {
+        loginAdmin: loginTratado,
+        NOT: {
+          id: alvo.id
+        }
+      }
+    });
+
+    if (existeLogin) {
+      throw new Error("Já existe um usuário com este login de administrador.");
+    }
+  }
+
+  if (novaSenha !== undefined && novaSenha !== null && String(novaSenha).trim() !== "") {
+    if (String(novaSenha).length < 6) {
+      throw new Error("A nova senha deve ter pelo menos 6 caracteres.");
+    }
+
+    data.senhaHash = await bcrypt.hash(String(novaSenha), 10);
+  }
+
+  if (!Object.keys(data).length) {
+    return await prisma.usuario.findUnique({
+      where: {
+        id: alvo.id
+      },
+      select: selectUsuarioAdmin
+    });
+  }
+
+  const usuarioAtualizado = await prisma.usuario.update({
+    where: {
+      id: alvo.id
+    },
+    data,
+    select: selectUsuarioAdmin
+  });
+
+  return usuarioAtualizado;
+}
+
 export default {
   cadastrarParticipante,
   verificarEmail,
@@ -360,5 +560,7 @@ export default {
   listarMinhasInscricoes,
   buscarPerfil,
   atualizarPerfil,
-  atualizarFotoPerfil
+  atualizarFotoPerfil,
+  listarTodosParaAdmin,
+  atualizarPorAdmin
 };
