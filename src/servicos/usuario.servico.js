@@ -552,6 +552,58 @@ async function atualizarPorAdmin(usuarioAlvoId, dados = {}) {
   return usuarioAtualizado;
 }
 
+async function excluirPorAdmin(usuarioAlvoId, adminOperadorId) {
+  const alvoId = Number(usuarioAlvoId);
+  const operadorId = Number(adminOperadorId);
+
+  if (!Number.isFinite(alvoId)) {
+    throw new Error("ID de usuário inválido.");
+  }
+
+  if (!Number.isFinite(operadorId)) {
+    throw new Error("Sessão de administrador inválida.");
+  }
+
+  if (alvoId === operadorId) {
+    throw new Error("Não é possível excluir o próprio usuário.");
+  }
+
+  const alvo = await prisma.usuario.findUnique({
+    where: {
+      id: alvoId
+    }
+  });
+
+  if (!alvo) {
+    throw new Error("Usuário não encontrado.");
+  }
+
+  if (alvo.papel === "ADMIN") {
+    const outrosAdmins = await prisma.usuario.count({
+      where: {
+        papel: "ADMIN",
+        id: {
+          not: alvoId
+        }
+      }
+    });
+
+    if (outrosAdmins === 0) {
+      throw new Error("Não é possível excluir o único administrador do sistema.");
+    }
+  }
+
+  await prisma.usuario.delete({
+    where: {
+      id: alvoId
+    }
+  });
+
+  return {
+    mensagem: "Usuário excluído com sucesso."
+  };
+}
+
 export default {
   cadastrarParticipante,
   verificarEmail,
@@ -562,5 +614,6 @@ export default {
   atualizarPerfil,
   atualizarFotoPerfil,
   listarTodosParaAdmin,
-  atualizarPorAdmin
+  atualizarPorAdmin,
+  excluirPorAdmin
 };

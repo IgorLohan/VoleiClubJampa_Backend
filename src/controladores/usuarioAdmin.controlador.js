@@ -23,7 +23,20 @@ async function atualizar(req, res) {
   }
 }
 
+async function excluir(req, res) {
+  try {
+    const { id } = req.params;
+    const resultado = await usuarioServico.excluirPorAdmin(id, req.admin.id);
+    return res.json(resultado);
+  } catch (error) {
+    return res.status(400).json({
+      erro: error.message
+    });
+  }
+}
+
 export default {
   listar,
-  atualizar
+  atualizar,
+  excluir
 };
