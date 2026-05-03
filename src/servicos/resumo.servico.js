@@ -123,7 +123,13 @@ function montarResumo(campeonato, incluirContato = false) {
     ? inscricoesIndividuaisOriginais
     : inscricoesIndividuaisOriginais.filter(inscricaoIndividualVisivelPublicamente);
 
-  const totalParticipantes = campeonato.participantes.length;
+  const participantesFonte = incluirContato
+    ? campeonato.participantes
+    : campeonato.participantes.filter((p) => p.statusInscricao === "APROVADA");
+
+  const totalParticipantes = incluirContato
+    ? campeonato.participantes.length
+    : participantesFonte.length;
 
   const totalInscricoesIndividuais = incluirContato
     ? inscricoesIndividuaisOriginais.filter(inscricaoIndividualEstaAtiva).length
@@ -192,7 +198,7 @@ function montarResumo(campeonato, incluirContato = false) {
     statusCampeonato = "FINALIZADO";
   }
 
-  const participantes = campeonato.participantes.map((participante) =>
+  const participantes = participantesFonte.map((participante) =>
     montarParticipanteResumo(participante, incluirContato)
   );
 
