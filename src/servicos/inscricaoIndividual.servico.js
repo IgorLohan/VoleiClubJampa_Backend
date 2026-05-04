@@ -1,7 +1,7 @@
 import { prisma } from "../banco/prisma.js";
 import emailServico from "./email.servico.js";
 
-const TAMANHOS_CAMISA_VALIDOS = ["P", "M", "G", "GG"];
+const TAMANHOS_CAMISA_VALIDOS = ["P", "M", "G", "GG", "XG", "XGG"];
 
 // Por enquanto deixei R$ 30,00 como valor padrão.
 // Depois, se o valor total com camisa for outro, basta alterar aqui.
@@ -26,7 +26,7 @@ function validarTamanhoCamisa(tamanhoCamisa) {
   }
 
   if (!TAMANHOS_CAMISA_VALIDOS.includes(tamanhoCamisa)) {
-    throw new Error("Tamanho de camisa inválido. Escolha P, M, G ou GG.");
+    throw new Error("Tamanho de camisa inválido. Escolha P, M, G, GG, XG ou XGG.");
   }
 }
 

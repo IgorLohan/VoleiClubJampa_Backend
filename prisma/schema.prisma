@@ -82,6 +82,8 @@ enum TamanhoCamisa {
   M
   G
   GG
+  XG
+  XGG
 }
 
 model Usuario {
