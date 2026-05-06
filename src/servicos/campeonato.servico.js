@@ -80,6 +80,11 @@ function contarInscricoesIndividuaisAprovadas(inscricoesIndividuais) {
   ).length;
 }
 
+function contarInscricoesIndividuaisAtivas(inscricoesIndividuais) {
+  return inscricoesIndividuais.filter((inscricao) => inscricao.status !== "CANCELADA")
+    .length;
+}
+
 async function criar(dados) {
   const {
     nome,
@@ -157,6 +162,8 @@ async function listarPublicos() {
     const totalParticipantes = campeonato.participantes.length;
     const totalInscricoesIndividuaisAprovadas =
       contarInscricoesIndividuaisAprovadas(campeonato.inscricoesIndividuais);
+    const totalInscricoesIndividuaisAtivas =
+      contarInscricoesIndividuaisAtivas(campeonato.inscricoesIndividuais);
 
     const totalJogos = campeonato.jogos.length;
     const jogosFinalizados = campeonato.jogos.filter(
@@ -199,6 +206,7 @@ async function listarPublicos() {
       totais: {
         participantes: totalParticipantes,
         inscricoesIndividuais: totalInscricoesIndividuaisAprovadas,
+        inscricoesIndividuaisAtivas: totalInscricoesIndividuaisAtivas,
         jogos: totalJogos,
         jogosFinalizados
       },
