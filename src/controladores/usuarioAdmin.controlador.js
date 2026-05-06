@@ -11,6 +11,17 @@ async function listar(req, res) {
   }
 }
 
+async function listarSemInscricao(req, res) {
+  try {
+    const usuarios = await usuarioServico.listarUsuariosSemInscricaoParaAdmin();
+    return res.json(usuarios);
+  } catch (error) {
+    return res.status(400).json({
+      erro: error.message
+    });
+  }
+}
+
 async function atualizar(req, res) {
   try {
     const { id } = req.params;
@@ -37,6 +48,7 @@ async function excluir(req, res) {
 
 export default {
   listar,
+  listarSemInscricao,
   atualizar,
   excluir
 };

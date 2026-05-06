@@ -379,6 +379,24 @@ async function listarTodosParaAdmin() {
   });
 }
 
+async function listarUsuariosSemInscricaoParaAdmin() {
+  return await prisma.usuario.findMany({
+    where: {
+      papel: "PARTICIPANTE",
+      inscricoes: {
+        none: {}
+      },
+      inscricoesIndividuais: {
+        none: {}
+      }
+    },
+    orderBy: {
+      criadoEm: "desc"
+    },
+    select: selectUsuarioAdmin
+  });
+}
+
 async function atualizarPorAdmin(usuarioAlvoId, dados = {}) {
   const {
     nome,
@@ -614,6 +632,7 @@ export default {
   atualizarPerfil,
   atualizarFotoPerfil,
   listarTodosParaAdmin,
+  listarUsuariosSemInscricaoParaAdmin,
   atualizarPorAdmin,
   excluirPorAdmin
 };
