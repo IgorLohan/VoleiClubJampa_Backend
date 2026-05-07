@@ -95,8 +95,10 @@ function validarJogadoresParaEquipe(inscricoes, campeonato) {
     }
 
     if (campeonato.tipoParticipante === "TIME") {
-      if (!(masculinos === 2 && femininos === 2)) {
-        throw new Error("Para quarteto misto, selecione 2 jogadores masculinos e 2 femininos.");
+      if (masculinos < 1 || femininos < 1) {
+        throw new Error(
+          "Para quarteto misto, selecione pelo menos 1 jogador masculino e 1 jogador feminino."
+        );
       }
     }
   }

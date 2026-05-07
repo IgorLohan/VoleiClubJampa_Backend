@@ -12,8 +12,22 @@ const MODOS_INSCRICAO_VALIDOS = [
   "INDIVIDUAL"
 ];
 
+const QUANTIDADES_EQUIPES_VALIDAS_GRUPOS = [8, 12, 13, 14, 15, 16];
+
 function valorFoiEnviado(valor) {
   return valor !== undefined && valor !== null && valor !== "";
+}
+
+function obterTamanhoEquipe(tipoParticipante) {
+  if (tipoParticipante === "DUPLA") {
+    return 2;
+  }
+
+  if (tipoParticipante === "TIME") {
+    return 4;
+  }
+
+  throw new Error("Tipo de participante inválido.");
 }
 
 function validarFormatoCampeonato(formato) {
@@ -40,7 +54,12 @@ function validarModoInscricao(modoInscricao) {
   return modoInscricao;
 }
 
-function prepararQuantidadeMaxima(formato, modoInscricao, quantidadeMaxima) {
+function prepararQuantidadeMaxima(
+  formato,
+  modoInscricao,
+  tipoParticipante,
+  quantidadeMaxima
+) {
   if (
     quantidadeMaxima === null ||
     quantidadeMaxima === undefined ||
@@ -59,14 +78,32 @@ function prepararQuantidadeMaxima(formato, modoInscricao, quantidadeMaxima) {
     throw new Error("A quantidade máxima precisa ser um número maior ou igual a 2.");
   }
 
-  if (
-    formato === "GRUPOS_3X4_REPESCAGEM" &&
-    modoInscricao === "POR_EQUIPE" &&
-    ![8, 12].includes(quantidade)
-  ) {
-    throw new Error(
-      "No formato com fase de grupos por equipe, a quantidade máxima precisa ser 8 ou 12 equipes."
-    );
+  if (formato === "GRUPOS_3X4_REPESCAGEM") {
+    if (modoInscricao === "POR_EQUIPE") {
+      if (!QUANTIDADES_EQUIPES_VALIDAS_GRUPOS.includes(quantidade)) {
+        throw new Error(
+          "No formato com fase de grupos por equipe, a quantidade máxima precisa ser 8, 12, 13, 14, 15 ou 16 equipes."
+        );
+      }
+    }
+
+    if (modoInscricao === "INDIVIDUAL") {
+      const tamanhoEquipe = obterTamanhoEquipe(tipoParticipante);
+
+      if (quantidade % tamanhoEquipe !== 0) {
+        throw new Error(
+          `A quantidade máxima de jogadores precisa ser múltipla de ${tamanhoEquipe}.`
+        );
+      }
+
+      const quantidadeEquipes = quantidade / tamanhoEquipe;
+
+      if (!QUANTIDADES_EQUIPES_VALIDAS_GRUPOS.includes(quantidadeEquipes)) {
+        throw new Error(
+          "No formato com fase de grupos individual, a quantidade máxima precisa equivaler a 8, 12, 13, 14, 15 ou 16 equipes."
+        );
+      }
+    }
   }
 
   return quantidade;
@@ -103,6 +140,7 @@ async function criar(dados) {
   const quantidadeMaximaTratada = prepararQuantidadeMaxima(
     formatoValidado,
     modoInscricaoValidado,
+    tipoParticipante,
     quantidadeMaxima
   );
 
@@ -314,6 +352,7 @@ async function atualizar(id, dados) {
     ? prepararQuantidadeMaxima(
         formatoFinal,
         modoInscricaoFinal,
+        tipoParticipanteFinal,
         quantidadeMaxima
       )
     : campeonato.quantidadeMaxima;
