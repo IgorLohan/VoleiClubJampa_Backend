@@ -77,6 +77,7 @@ function montarInscricaoIndividualResumo(inscricao, incluirContato = false) {
     usuarioId: inscricao.usuarioId,
     participanteId: inscricao.participanteId,
     tamanhoCamisa: inscricao.tamanhoCamisa,
+    temComprovantePagamento: Boolean(inscricao.comprovantePagamento),
 
     usuario: inscricao.usuario
       ? {
@@ -110,7 +111,6 @@ function montarInscricaoIndividualResumo(inscricao, incluirContato = false) {
   return {
     ...dadosBasicos,
     valorTotalCentavos: inscricao.valorTotalCentavos,
-    comprovantePagamento: inscricao.comprovantePagamento,
     observacaoAdmin: inscricao.observacaoAdmin,
     analisadoEm: inscricao.analisadoEm
   };
@@ -255,10 +255,38 @@ async function buscarCampeonatoComRelacionamentos(campeonatoId) {
     where: {
       id: Number(campeonatoId)
     },
-    include: {
+    select: {
+      id: true,
+      nome: true,
+      data: true,
+      local: true,
+      tipoParticipante: true,
+      categoria: true,
+      formato: true,
+      modoInscricao: true,
+      quantidadeMaxima: true,
+      inscricoesAbertas: true,
+      criadoEm: true,
+
       participantes: {
-        include: {
-          jogadores: true
+        select: {
+          id: true,
+          nomeEquipe: true,
+          responsavel: true,
+          contato: true,
+          statusInscricao: true,
+          criadoEm: true,
+          campeonatoId: true,
+          usuarioId: true,
+          equipeId: true,
+          jogadores: {
+            select: {
+              id: true,
+              nome: true,
+              genero: true,
+              participanteId: true
+            }
+          }
         },
         orderBy: {
           criadoEm: "asc"
@@ -266,7 +294,23 @@ async function buscarCampeonatoComRelacionamentos(campeonatoId) {
       },
 
       inscricoesIndividuais: {
-        include: {
+        select: {
+          id: true,
+          status: true,
+          criadoEm: true,
+          statusAnalise: true,
+          valorTotalCentavos: true,
+          tamanhoCamisa: true,
+          observacaoAdmin: true,
+          analisadoEm: true,
+          campeonatoId: true,
+          usuarioId: true,
+          participanteId: true,
+
+          // Não retornar o comprovante completo no resumo.
+          // Isso evita carregar imagens/base64 pesadas na tela de campeonatos.
+          comprovantePagamento: false,
+
           usuario: {
             select: {
               id: true,
@@ -277,7 +321,15 @@ async function buscarCampeonatoComRelacionamentos(campeonatoId) {
               fotoPerfil: true
             }
           },
-          participante: true
+
+          participante: {
+            select: {
+              id: true,
+              nomeEquipe: true,
+              responsavel: true,
+              statusInscricao: true
+            }
+          }
         },
         orderBy: {
           criadoEm: "asc"
@@ -285,11 +337,66 @@ async function buscarCampeonatoComRelacionamentos(campeonatoId) {
       },
 
       jogos: {
-        include: {
-          equipeA: true,
-          equipeB: true,
-          vencedor: true,
+        select: {
+          id: true,
+          fase: true,
+          grupo: true,
+          rodada: true,
+          ordem: true,
+          status: true,
+          criadoEm: true,
+          campeonatoId: true,
+          equipeAId: true,
+          equipeBId: true,
+          vencedorId: true,
+
+          equipeA: {
+            select: {
+              id: true,
+              nomeEquipe: true,
+              responsavel: true,
+              contato: true,
+              statusInscricao: true,
+              campeonatoId: true,
+              usuarioId: true,
+              equipeId: true
+            }
+          },
+
+          equipeB: {
+            select: {
+              id: true,
+              nomeEquipe: true,
+              responsavel: true,
+              contato: true,
+              statusInscricao: true,
+              campeonatoId: true,
+              usuarioId: true,
+              equipeId: true
+            }
+          },
+
+          vencedor: {
+            select: {
+              id: true,
+              nomeEquipe: true,
+              responsavel: true,
+              contato: true,
+              statusInscricao: true,
+              campeonatoId: true,
+              usuarioId: true,
+              equipeId: true
+            }
+          },
+
           sets: {
+            select: {
+              id: true,
+              numeroSet: true,
+              pontosA: true,
+              pontosB: true,
+              jogoId: true
+            },
             orderBy: {
               numeroSet: "asc"
             }
