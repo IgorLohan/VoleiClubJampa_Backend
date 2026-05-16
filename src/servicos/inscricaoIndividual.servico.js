@@ -410,8 +410,12 @@ async function reprovarInscricao(
   return inscricaoAtualizada;
 }
 
+async function confirmarRetiradaCamisa(inscricaoId, camisaRetirada = true) {
+  return atualizarInscricao(inscricaoId, { camisaRetirada: Boolean(camisaRetirada) });
+}
+
 async function atualizarInscricao(inscricaoId, dados = {}) {
-  const { tamanhoCamisa, valorTotalCentavos, observacaoAdmin } = dados || {};
+  const { tamanhoCamisa, valorTotalCentavos, observacaoAdmin, camisaRetirada } = dados || {};
 
   const inscricao = await prisma.inscricaoIndividual.findUnique({
     where: {
@@ -449,6 +453,10 @@ async function atualizarInscricao(inscricaoId, dados = {}) {
   if (typeof observacaoAdmin !== "undefined") {
     const obs = String(observacaoAdmin || "").trim();
     dataAtualizacao.observacaoAdmin = obs.length ? obs : null;
+  }
+
+  if (typeof camisaRetirada !== "undefined") {
+    dataAtualizacao.camisaRetirada = Boolean(camisaRetirada);
   }
 
   if (!Object.keys(dataAtualizacao).length) {
@@ -691,6 +699,7 @@ export default {
   aprovarInscricao,
   reprovarInscricao,
   atualizarInscricao,
+  confirmarRetiradaCamisa,
   excluirInscricao,
   montarEquipeComInscricoesIndividuais
 };

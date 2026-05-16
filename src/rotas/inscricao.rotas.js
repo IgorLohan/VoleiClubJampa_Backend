@@ -49,6 +49,12 @@ router.patch(
 );
 
 router.patch(
+  "/inscricoes-individuais/:inscricaoId/camisa-retirada",
+  autenticarAdmin,
+  inscricaoIndividualControlador.confirmarCamisaRetirada
+);
+
+router.patch(
   "/inscricoes-individuais/:inscricaoId",
   autenticarAdmin,
   inscricaoIndividualControlador.atualizarInscricao

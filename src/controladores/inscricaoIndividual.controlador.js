@@ -70,15 +70,35 @@ async function reprovarInscricao(req, res) {
   }
 }
 
+async function confirmarCamisaRetirada(req, res) {
+  try {
+    const { inscricaoId } = req.params;
+    const { camisaRetirada } = req.body || {};
+
+    const inscricao = await inscricaoIndividualServico.confirmarRetiradaCamisa(
+      inscricaoId,
+      typeof camisaRetirada === "undefined" ? true : camisaRetirada
+    );
+
+    return res.json(inscricao);
+  } catch (error) {
+    return res.status(400).json({
+      erro: error.message
+    });
+  }
+}
+
 async function atualizarInscricao(req, res) {
   try {
     const { inscricaoId } = req.params;
-    const { tamanhoCamisa, valorTotalCentavos, observacaoAdmin } = req.body || {};
+    const { tamanhoCamisa, valorTotalCentavos, observacaoAdmin, camisaRetirada } =
+      req.body || {};
 
     const inscricao = await inscricaoIndividualServico.atualizarInscricao(inscricaoId, {
       tamanhoCamisa,
       valorTotalCentavos,
-      observacaoAdmin
+      observacaoAdmin,
+      camisaRetirada
     });
 
     return res.json(inscricao);
@@ -153,6 +173,7 @@ export default {
   aprovarInscricao,
   reprovarInscricao,
   atualizarInscricao,
+  confirmarCamisaRetirada,
   excluirInscricao,
   montarEquipe
 };

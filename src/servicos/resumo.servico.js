@@ -77,6 +77,7 @@ function montarInscricaoIndividualResumo(inscricao, incluirContato = false) {
     usuarioId: inscricao.usuarioId,
     participanteId: inscricao.participanteId,
     tamanhoCamisa: inscricao.tamanhoCamisa,
+    camisaRetirada: Boolean(inscricao.camisaRetirada),
     temComprovantePagamento: Boolean(inscricao.comprovantePagamento),
 
     usuario: inscricao.usuario
@@ -301,6 +302,7 @@ async function buscarCampeonatoComRelacionamentos(campeonatoId) {
           statusAnalise: true,
           valorTotalCentavos: true,
           tamanhoCamisa: true,
+          camisaRetirada: true,
           observacaoAdmin: true,
           analisadoEm: true,
           campeonatoId: true,

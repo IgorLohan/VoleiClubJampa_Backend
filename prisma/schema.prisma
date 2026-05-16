@@ -210,6 +210,7 @@ model InscricaoIndividual {
 
   valorTotalCentavos   Int            @default(2000)
   tamanhoCamisa        TamanhoCamisa?
+  camisaRetirada       Boolean        @default(false)
   comprovantePagamento String?
 
   observacaoAdmin String?
